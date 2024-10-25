@@ -1,7 +1,6 @@
 <?php
 
 /*
-    git
     json & datetime & json & setInterval & custom sleep
     checkboxes
     ascii char values
