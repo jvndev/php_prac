@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Practice</title>
+    <link rel="stylesheet" href="{{url}}css/index.css" />
+    <script src="{{url}}js/index.js"></script>
+</head>
+
+<body>
+    <form method="post" action=".">
+        <div class="inputs">
+            <div class="line">
+                <label for="txtFirstName">First Name</label>
+                <input name="first_name" id="txtFirstName">
+            </div>
+            <div class="line">
+                <label for="txtLastName">Last Name</label>
+                <input name="last_name" id="txtLastName">
+            </div>
+            <div class="line">
+                <label for="txtComments">Comments</label>
+                <textarea name="comments" id="txtComments"></textarea>
+            </div>
+        </div>
+        <div class="buttons">
+            <button type="submit" id="btnCreate">Create</button>
+        </div>
+    </form>
+    <div>
+        {{posts}}
+    </div>
+</body>
+
+</html>

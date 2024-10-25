@@ -1,0 +1,13 @@
+input[id^='txt'] textarea {
+    color: black;
+    background-color: darkgray;
+    border-color: gray;
+}
+
+.invalid {
+    border-color: red !important;
+}
+
+textarea {
+    resize: none;
+}
