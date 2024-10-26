@@ -2,6 +2,8 @@
 
 namespace DI;
 
+use PDO;
+
 class Person {
     public function __construct(public string $first_name, public string $last_name) {}
 
@@ -17,9 +19,29 @@ interface IDataSource {
 }
 
 class DB implements IDataSource {
+    private readonly PDO $pdo;
+
+    public function __construct()
+    {
+       $this->pdo = new PDO(
+        'mysql:host=localhost;dbname=jaco;',
+        'jaco',
+        'password',
+        [
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
+        ]
+       ); 
+    }
+
     #[\Override]
     public function getData(): array {
-        return [];
+        $arr = [];
+        $stmt = $this->pdo->query("select first_name, last_name from employees");
+
+        foreach ($stmt->fetchAll() as $record)
+            array_push($arr, new Person($record->first_name, $record->last_name));
+
+        return $arr;
     }
 }
 
