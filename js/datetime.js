@@ -2,7 +2,7 @@ const url = 'http://localhost/php_prac/datetime.php';
 const request = new Request(url, {
     method: 'GET',
     responseType: 'json',
-    credentials: 'omit',
+    //credentials: 'omit',
 });
 
 function getDate() {
@@ -17,4 +17,4 @@ function getDate() {
     });
 }
 
-setInterval(getDate, 1000);
+//setInterval(getDate, 1000);
