@@ -32,7 +32,8 @@ class DB
         return $stmt->fetchColumn() > 0;
     }
 
-    function insertNr(int $id, int $nr): bool {
+    function insertNr(int $id, int $nr): bool
+    {
         $stmt = $this->conn->prepare("
             insert into numbers
             (phpsessid, nr)
