@@ -119,6 +119,10 @@ $ll = new DoublyLL();
 for ($i = 1; $i < 20; $i += 2)
     $ll->add($i);
 $collector = fn(int $p, array $c) => [$p, ...$c];
+$strCollector = fn(string $p, int $c) => "$p, $c";
 
-var_dump($ll->traverseForward($collector, []));
-var_dump($ll->traverseBackward($collector, []));
+printf(
+    "\n%s\n%s\n",
+    array_reduce($ll->traverseForward($collector, []), $strCollector, ""),
+    array_reduce($ll->traverseBackward($collector, []), $strCollector, ""),
+);
