@@ -106,7 +106,7 @@ final class DoublyLL
 
         return (string)$this->traverseForward($collector, $initial)
             . "\n"
-            . ($this->traverseBackward($collector, $initial));
+            . (string)$this->traverseBackward($collector, $initial);
     }
 }
 
@@ -114,3 +114,11 @@ echo (new DoublyLL())
     ->add(1)
     ->add(2)
     ->add(3);
+
+$ll = new DoublyLL();
+for ($i = 1; $i < 20; $i += 2)
+    $ll->add($i);
+$collector = fn(int $p, array $c) => [$p, ...$c];
+
+var_dump($ll->traverseForward($collector, []));
+var_dump($ll->traverseBackward($collector, []));
