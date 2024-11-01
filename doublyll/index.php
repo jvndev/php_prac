@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-
 <?php
 
 require  __DIR__ . '/data/doublyll.php';
@@ -11,7 +9,7 @@ if (!isset($_SESSION['DLL'])) {
 }
 
 define('DLL', $_SESSION['DLL']);
-define('CONN', new DB());
+define('DB', new DB());
 
 class DB
 {
@@ -25,7 +23,7 @@ class DB
 
     public function __construct()
     {
-        $this->conn = mysqli_connect(...array_values(self::CONNPROPS));
+        ($this->conn = mysqli_connect(...array_values(self::CONNPROPS))) || die("Couldn't connect");
     }
 
     private function _keyResults(array $res): array
@@ -49,25 +47,50 @@ class DB
                 ->fetch_all(MYSQLI_ASSOC)
         );
     }
+
+    public function insertNumber(string $phpsessid, int $nr): string
+    {
+        mysqli_report(MYSQLI_REPORT_OFF);
+        $stmt = $this->conn->prepare('
+            insert into numbers
+            (phpsessid, nr)
+            value
+            (?, ?)
+        ');
+
+        return $stmt && $stmt->execute([$phpsessid, $nr])
+            ? 'success'
+            : $this->conn->error;
+    }
 }
 
 function html()
 {
 ?>
+    <!DOCTYPE html>
     <html>
 
     <head>
         <script>
             window.addEventListener('load', () => {
-                document.getElementById('btnNr').addEventListener('click', () => {
+                document.getElementById('btnNr').addEventListener('click', (event) => {
+                    document.getElementById('btnNr').setAttribute('disabled', '');
+
                     fetch('.', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded; encoding=utf-8;',
                         },
                         body: new URLSearchParams({
+                            phpsessid: '<?= session_id() ?>',
                             nr: document.getElementById('txtNr').value,
                         }),
+                    }).then(async response => {
+                        const json = await response.json();
+                        let txtNr = document.getElementById('txtNr');
+
+                        txtNr.value = Number.parseInt(txtNr.value) + 1;
+                        document.getElementById('btnNr').removeAttribute('disabled');
                     });
                 });
             });
@@ -75,16 +98,8 @@ function html()
     </head>
 
     <body>
-        <input id='txtNr'>
+        <input id='txtNr' value="1">
         <button id='btnNr'>Send</button>
-        <form method="get" action=".">
-            <input name='txtGetTest'>
-            <button name="btnGetTest">GET</button>
-        </form>
-        <form method="post" action=".">
-            <input name='nr'>
-            <button name="btnPostTest">POST</button>
-        </form>
     </body>
 
     </html>
@@ -94,13 +109,15 @@ function html()
 
 function api()
 {
-    echo $_POST['nr'];
+    header('Content-Type: application/json; charset=utf-8;');
+    $phpsessid = $_POST['phpsessid'];
+    $nr = $_POST['nr'];
+
+    echo json_encode(['result' => DB->insertNumber($phpsessid, $nr)]);
 }
 
 if (count($_POST)) {
     api();
-} elseif (count($_GET)) {
-    var_dump(CONN->getNumbers());
 } else {
     html();
 }
