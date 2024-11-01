@@ -23,7 +23,8 @@ class DB
 
     public function __construct()
     {
-        ($this->conn = mysqli_connect(...array_values(self::CONNPROPS))) || die("Couldn't connect");
+        ($this->conn = mysqli_connect(...array_values(self::CONNPROPS)))
+            || die("Couldn't connect");
     }
 
     private function _keyResults(array $res): array
@@ -64,6 +65,18 @@ class DB
     }
 }
 
+function getPostAction(array $post): string
+{
+    return array_reduce(
+        $post,
+        fn(string $p, string $e)
+        => preg_match('/^action-\w+$/', $e, $matches) !== 0
+            ? $matches[0]
+            : $p,
+        ''
+    );
+}
+
 function html()
 {
 ?>
@@ -73,33 +86,51 @@ function html()
     <head>
         <script>
             window.addEventListener('load', () => {
-                document.getElementById('btnNr').addEventListener('click', (event) => {
-                    document.getElementById('btnNr').setAttribute('disabled', '');
-
-                    fetch('.', {
+                const postBtns_OnClick = (event) => {
+                    const action = event.target.name;
+                    const fetched = fetch('.', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded; encoding=utf-8;',
                         },
                         body: new URLSearchParams({
+                            action: action,
                             phpsessid: '<?= session_id() ?>',
                             nr: document.getElementById('txtNr').value,
                         }),
-                    }).then(async response => {
-                        const json = await response.json();
-                        let txtNr = document.getElementById('txtNr');
-
-                        txtNr.value = Number.parseInt(txtNr.value) + 1;
-                        document.getElementById('btnNr').removeAttribute('disabled');
                     });
-                });
+
+                    document.getElementById('btnNr').setAttribute('disabled', '');
+
+                    switch (action) {
+                        case 'action-nr':
+                            fetched.then(async response => {
+                                const json = await response.json();
+                                const txtNr = document.getElementById('txtNr');
+
+                                txtNr.value = Number.parseInt(txtNr.value) + 1;
+                                document.getElementById('btnNr').removeAttribute('disabled');
+                            });
+                            break;
+                        default:
+                            console.error(`Unknown action ${action}`);
+                    }
+                }
+
+                document.querySelectorAll("button[name^='action']")
+                    .forEach(e => e.addEventListener('click', postBtns_OnClick));
             });
         </script>
     </head>
 
     <body>
-        <input id='txtNr' value="1">
-        <button id='btnNr'>Send</button>
+        <div>
+            <input id='txtNr' value="1">
+            <button id='btnNr' name='action-nr'>Send</button>
+        </div>
+        <div>
+            <button id='btnFlush' name='action-flush'>Flush to DB</button>
+        </div>
     </body>
 
     </html>
@@ -107,17 +138,19 @@ function html()
 <?php
 }
 
-function api()
+function api(string $action)
 {
     header('Content-Type: application/json; charset=utf-8;');
     $phpsessid = $_POST['phpsessid'];
     $nr = $_POST['nr'];
 
-    echo json_encode(['result' => DB->insertNumber($phpsessid, $nr)]);
+    echo json_encode(['action' => $action ? $action : '??']);
 }
 
 if (count($_POST)) {
-    api();
+    $action = getPostAction($_POST);
+
+    api($action);
 } else {
     html();
 }
