@@ -40,13 +40,28 @@ class DB
         }, []);
     }
 
-    public function getNumbers()
+    public function getNumbers(): array
     {
+        $sql = 'select id, phpsessid, nr from numbers';
+
         return $this->_keyResults(
             $this->conn
-                ->query('select id, phpsessid, nr from numbers')
+                ->query($sql)
                 ->fetch_all(MYSQLI_ASSOC)
         );
+    }
+
+    public function getNumber(string $phpsessid): int {
+        $sql = 'select max(nr) nr from numbers where phpsessid = ?';
+        $stmt = $this->conn->prepare($sql);
+
+        if (!$stmt) throw new mysqli_sql_exception(
+            'Statement error: ' . $this->conn->error
+        );
+
+        $stmt->execute([$phpsessid]);
+
+        return $stmt->get_result();
     }
 
     public function insertNumber(string $phpsessid, int $nr): string
