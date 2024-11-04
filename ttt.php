@@ -47,7 +47,7 @@ class Board
     {
         $this->squares = array_map(
             fn($_) => Piece::Empty(),
-            range(0, SIZE * SIZE)
+            range(0, SIZE * SIZE - 1)
         );
     }
 
@@ -70,7 +70,7 @@ class Board
             $verTotal = 0;
 
             for ($j = 0; $j < SIZE; $j++) {
-                $horTotal += $this->squares[$i + $j]->val;
+                $horTotal += $this->squares[$i * SIZE + $j]->val;
                 $verTotal += $this->squares[$i + $j * SIZE]->val;
             }
 
@@ -109,14 +109,39 @@ class Board
         return true;
     }
 
-    public function getAvailableMoves(): array {
+    public function getAvailableMoves(): array
+    {
         return array_keys(array_filter(
             $this->squares,
             fn(Piece $e): bool => $e == Piece::Empty()
         ));
     }
 
-    public function isBoardFull(): bool {
+    private function _getMinMax(Piece $piece, int $move): int
+    {
+        return rand(-1 * SIZE, SIZE);
+    }
+
+    public function getBestMove(Piece $piece): int
+    {
+        $minMaxFn = $piece == Piece::Nought() ? 'min' : 'max';
+        $bestMove = $piece == Piece::Nought() ? PHP_INT_MAX : PHP_INT_MIN;
+        $minMax = 0;
+
+        foreach ($this->getAvailableMoves() as $move) {
+            $_minMax = $this->_getMinMax($piece, $move);
+
+            if ($minMax != ($_minMax = $minMaxFn($minMax, $_minMax))) {
+                $minMax = $_minMax;
+                $bestMove = $move;
+            }
+        }
+
+        return $bestMove;
+    }
+
+    public function isBoardFull(): bool
+    {
         return !count($this->getAvailableMoves());
     }
 
@@ -134,13 +159,14 @@ class Board
 
 function printBoard(Board $board): void
 {
-    sleep(1);
+    usleep(1000000 * 0.5);
     system('clear');
     echo $board;
 }
 
-function changeTurn(Piece $turn) {
-    return $turn == Piece::Cross() ? Piece::Nought() : Piece::Cross();
+function changeTurn(Piece &$turn): void
+{
+    $turn = $turn == Piece::Cross() ? Piece::Nought() : Piece::Cross();
 }
 
 $board = new Board();
@@ -148,10 +174,10 @@ $turn = Piece::Cross();
 
 do {
     printBoard($board);
-    $moves = $board->getAvailableMoves();
-    $board->move($turn, $moves[rand(0, count($moves))]);
 
-    $turn = changeTurn($turn);
+    $board->move($turn, $board->getBestMove($turn));
+
+    changeTurn($turn);
 } while (!($winner = $board->getWinner()) && !$board->isBoardFull());
 
 printBoard($board);
