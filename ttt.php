@@ -124,18 +124,20 @@ class Board
 
     public function getBestMove(Piece $piece): int
     {
-        $minMaxFn = $piece == Piece::Nought() ? 'min' : 'max';
-        $bestMove = $piece == Piece::Nought() ? PHP_INT_MAX : PHP_INT_MIN;
-        $minMax = 0;
+        $compare = fn(Piece $piece, int $a, int $b): bool
+            => $piece == Piece::Cross() ? $a >= $b : $a <= $b;
+        $minMax = $piece == Piece::Cross() ? PHP_INT_MIN : PHP_INT_MAX;
 
         foreach ($this->getAvailableMoves() as $move) {
             $_minMax = $this->_getMinMax($piece, $move);
 
-            if ($minMax != ($_minMax = $minMaxFn($minMax, $_minMax))) {
+            if ($compare($piece, $_minMax, $minMax)) {
                 $minMax = $_minMax;
                 $bestMove = $move;
             }
         }
+
+        assert(isset($bestMove), "$piece ($minMax $_minMax)");
 
         return $bestMove;
     }
@@ -151,35 +153,48 @@ class Board
         $str = '';
 
         for ($i = 1; $i <= SIZE * SIZE; $i++)
-            $str .= $this->squares[$i - 1] . ($i % SIZE == 0 ? "\n" : '');
+            $str .= $this->squares[$i - 1] . ($i % SIZE == 0 ? PHP_EOL : '');
 
         return $str;
     }
 }
 
-function printBoard(Board $board): void
+final class Game
 {
-    usleep(1000000 * 0.5);
-    system('clear');
-    echo $board;
-}
+    private function __construct() {}
 
-function changeTurn(Piece &$turn): void
-{
-    $turn = $turn == Piece::Cross() ? Piece::Nought() : Piece::Cross();
-}
+    private static function printBoard(Board $board): void
+    {
+        usleep(1000000 * 0.5);
+        system('clear');
+        echo $board;
+    }
 
-$board = new Board();
-$turn = Piece::Cross();
+    private static function changeTurn(Piece &$turn): void
+    {
+        $turn = $turn == Piece::Cross() ? Piece::Nought() : Piece::Cross();
+    }
+
+    public static function start(): void
+    {
+        $board = new Board();
+        $turn = Piece::Cross();
+
+        do {
+            self::printBoard($board);
+
+            $board->move($turn, $board->getBestMove($turn));
+
+            self::changeTurn($turn);
+        } while (!($winner = $board->getWinner()) && !$board->isBoardFull());
+
+        self::printBoard($board);
+
+        echo ($winner ? "$winner wins" : 'no winner') . PHP_EOL;
+    }
+}
 
 do {
-    printBoard($board);
-
-    $board->move($turn, $board->getBestMove($turn));
-
-    changeTurn($turn);
-} while (!($winner = $board->getWinner()) && !$board->isBoardFull());
-
-printBoard($board);
-
-echo ($winner ? "$winner wins" : 'no winner') . "\n";
+    Game::start();
+    sleep(1);
+} while (true);
