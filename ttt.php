@@ -2,29 +2,33 @@
 
 const SIZE = 3;
 
-final class Piece {
+final class Piece
+{
     private static Piece $empty, $cross, $nought;
 
-    private function __construct(private string $symbol, public int $val) { }
+    private function __construct(private string $symbol, public int $val) {}
 
-    public static function Empty(): Piece {
+    public static function Empty(): Piece
+    {
         if (!isset(self::$empty))
             self::$empty = new Piece('.', 0);
-    
+
         return self::$empty;
     }
 
-    public static function Cross(): Piece {
+    public static function Cross(): Piece
+    {
         if (!isset(self::$cross))
             self::$cross = new Piece('X', 1);
-    
+
         return self::$cross;
     }
 
-    public static function Nought(): Piece {
+    public static function Nought(): Piece
+    {
         if (!isset(self::$nought))
             self::$nought = new Piece('O', -1);
-    
+
         return self::$nought;
     }
 
@@ -47,7 +51,8 @@ class Board
         );
     }
 
-    private static function _getBest(...$vals) {
+    private static function _getBest(...$vals)
+    {
         $minMax = 0;
 
         foreach ($vals as $val)
@@ -56,15 +61,8 @@ class Board
         return $minMax;
     }
 
-    public function getWinner(): ?Piece {
-        return match($this->_getState()) {
-            SIZE => Piece::Cross(),
-            -1 * SIZE => Piece::Nought(),
-            default => null,
-        };
-    }
-
-    private function _getState(): int {
+    private function _getState(): int
+    {
         $minMax = 0;
 
         for ($i = 0; $i < SIZE; $i++) {
@@ -77,8 +75,6 @@ class Board
             }
 
             $minMax = self::_getBest($minMax, $horTotal, $verTotal);
-            $horTotal = 0;
-            $verTotal = 0;
         }
 
         $diagTotal = 0;
@@ -87,20 +83,41 @@ class Board
         $minMax = self::_getBest($minMax, $diagTotal);
 
         $diagTotal = 0;
-        for ($i = SIZE - 1; $i < SIZE * SIZE - 1; $i += SIZE - 1) 
+        for ($i = SIZE - 1; $i < SIZE * SIZE - 1; $i += SIZE - 1)
             $diagTotal += $this->squares[$i]->val;
         $minMax = self::_getBest($minMax, $diagTotal);
 
         return $minMax;
     }
 
-    public function move(Piece $piece, int $square): bool {
+    public function getWinner(): ?Piece
+    {
+        return match ($this->_getState()) {
+            SIZE => Piece::Cross(),
+            -1 * SIZE => Piece::Nought(),
+            default => null,
+        };
+    }
+
+    public function move(Piece $piece, int $square): bool
+    {
         if ($this->squares[$square] != Piece::Empty())
             return false;
 
         $this->squares[$square] = $piece;
-        
+
         return true;
+    }
+
+    public function getAvailableMoves(): array {
+        return array_keys(array_filter(
+            $this->squares,
+            fn(Piece $e): bool => $e == Piece::Empty()
+        ));
+    }
+
+    public function isBoardFull(): bool {
+        return !count($this->getAvailableMoves());
     }
 
     #[Override]
@@ -115,14 +132,28 @@ class Board
     }
 }
 
-$board = new Board();
-$board->move(Piece::Cross(), 2);
-$board->move(Piece::Nought(), 3);
-$board->move(Piece::Nought(), 8);
-$board->move(Piece::Cross(), 4);
-$board->move(Piece::Nought(), 0);
-$board->move(Piece::Nought(), 6);
+function printBoard(Board $board): void
+{
+    sleep(1);
+    system('clear');
+    echo $board;
+}
 
-$winner = $board->getWinner();
-echo $board;
-echo ($winner ? "$winner wins": 'no winner') . "\n";
+function changeTurn(Piece $turn) {
+    return $turn == Piece::Cross() ? Piece::Nought() : Piece::Cross();
+}
+
+$board = new Board();
+$turn = Piece::Cross();
+
+do {
+    printBoard($board);
+    $moves = $board->getAvailableMoves();
+    $board->move($turn, $moves[rand(0, count($moves))]);
+
+    $turn = changeTurn($turn);
+} while (!($winner = $board->getWinner()) && !$board->isBoardFull());
+
+printBoard($board);
+
+echo ($winner ? "$winner wins" : 'no winner') . "\n";
