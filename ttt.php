@@ -186,9 +186,9 @@ final class Game
         $turn = Board::switchPiece($turn);
     }
 
-    public static function start(): void
+    public static function start(int $boardSize): void
     {
-        $board = new Board(5);
+        $board = new Board($boardSize);
         $turn = Piece::Cross();
 
         do {
@@ -206,6 +206,6 @@ final class Game
 }
 
 do {
-    Game::start();
+    Game::start(2);
     sleep(1);
 } while (true);
