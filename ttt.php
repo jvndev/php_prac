@@ -1,7 +1,5 @@
 <?php
 
-const SIZE = 3;
-
 final class Piece
 {
     private static Piece $empty, $cross, $nought;
@@ -41,13 +39,18 @@ final class Piece
 
 class Board
 {
+    private readonly int $boardSize;
     private array $squares;
 
-    public function __construct()
+    public function __construct(int $boardSize)
     {
+        if ($boardSize < 2)
+            throw new InvalidArgumentException("Invalid boardsize");
+
+        $this->boardSize = $boardSize;
         $this->squares = array_map(
             fn($_) => Piece::Empty(),
-            range(0, SIZE * SIZE - 1)
+            range(0, $boardSize * $boardSize - 1)
         );
     }
 
@@ -61,29 +64,37 @@ class Board
         return $minMax;
     }
 
+    public static function switchPiece(Piece $piece): Piece
+    {
+        return $piece == Piece::Cross()
+            ? Piece::Nought()
+            : Piece::Cross();
+    }
+
     private function _getState(): int
     {
+        $size = $this->boardSize;
         $minMax = 0;
 
-        for ($i = 0; $i < SIZE; $i++) {
+        for ($i = 0; $i < $size; $i++) {
             $horTotal = 0;
             $verTotal = 0;
 
-            for ($j = 0; $j < SIZE; $j++) {
-                $horTotal += $this->squares[$i * SIZE + $j]->val;
-                $verTotal += $this->squares[$i + $j * SIZE]->val;
+            for ($j = 0; $j < $size; $j++) {
+                $horTotal += $this->squares[$i * $size + $j]->val;
+                $verTotal += $this->squares[$i + $j * $size]->val;
             }
 
             $minMax = self::_getBest($minMax, $horTotal, $verTotal);
         }
 
         $diagTotal = 0;
-        for ($i = 0; $i < SIZE * SIZE; $i += SIZE + 1)
+        for ($i = 0; $i < $size * $size; $i += $size + 1)
             $diagTotal += $this->squares[$i]->val;
         $minMax = self::_getBest($minMax, $diagTotal);
 
         $diagTotal = 0;
-        for ($i = SIZE - 1; $i < SIZE * SIZE - 1; $i += SIZE - 1)
+        for ($i = $size - 1; $i < $size * $size - 1; $i += $size - 1)
             $diagTotal += $this->squares[$i]->val;
         $minMax = self::_getBest($minMax, $diagTotal);
 
@@ -93,8 +104,8 @@ class Board
     public function getWinner(): ?Piece
     {
         return match ($this->_getState()) {
-            SIZE => Piece::Cross(),
-            -1 * SIZE => Piece::Nought(),
+            $this->boardSize => Piece::Cross(),
+            -1 * $this->boardSize => Piece::Nought(),
             default => null,
         };
     }
@@ -117,15 +128,14 @@ class Board
         ));
     }
 
-    private function _getMinMax(Piece $piece, int $move): int
-    {
-        return rand(-1 * SIZE, SIZE);
+    private function _getMinMax(Piece $piece, int $move): int {
+        return rand(-1 * $this->boardSize, $this->boardSize);
     }
 
     public function getBestMove(Piece $piece): int
     {
         $compare = fn(Piece $piece, int $a, int $b): bool
-            => $piece == Piece::Cross() ? $a >= $b : $a <= $b;
+        => $piece == Piece::Cross() ? $a >= $b : $a <= $b;
         $minMax = $piece == Piece::Cross() ? PHP_INT_MIN : PHP_INT_MAX;
 
         foreach ($this->getAvailableMoves() as $move) {
@@ -151,9 +161,10 @@ class Board
     public function __toString(): string
     {
         $str = '';
+        $size = $this->boardSize;
 
-        for ($i = 1; $i <= SIZE * SIZE; $i++)
-            $str .= $this->squares[$i - 1] . ($i % SIZE == 0 ? PHP_EOL : '');
+        for ($i = 1; $i <= $size * $size; $i++)
+            $str .= $this->squares[$i - 1] . ($i % $size == 0 ? PHP_EOL : '');
 
         return $str;
     }
@@ -172,12 +183,12 @@ final class Game
 
     private static function changeTurn(Piece &$turn): void
     {
-        $turn = $turn == Piece::Cross() ? Piece::Nought() : Piece::Cross();
+        $turn = Board::switchPiece($turn);
     }
 
     public static function start(): void
     {
-        $board = new Board();
+        $board = new Board(5);
         $turn = Piece::Cross();
 
         do {
