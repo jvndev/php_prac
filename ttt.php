@@ -120,7 +120,7 @@ class Board
         return true;
     }
 
-    public function getAvailableMoves(): array
+    private function getAvailableMoves(): array
     {
         return array_keys(array_filter(
             $this->squares,
@@ -129,7 +129,12 @@ class Board
     }
 
     private function _getMinMax(Piece $piece, int $move): int {
-        return rand(-1 * $this->boardSize, $this->boardSize);
+        $minMax = $piece == Piece::Cross() ? PHP_INT_MIN : PHP_INT_MAX;
+        $minMaxFn = $piece == Piece::Nought() ? 'min' : 'max';
+
+        foreach ($this->getAvailableMoves() as $move) {
+
+        }
     }
 
     public function getBestMove(Piece $piece): int
@@ -206,6 +211,6 @@ final class Game
 }
 
 do {
-    Game::start(2);
+    Game::start(3);
     sleep(1);
 } while (true);
